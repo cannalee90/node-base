@@ -1,0 +1,49 @@
+# node-base 이미지를 빌드한다(Dockerfile).
+# - main에 push: ghcr.io/cannalee90/node-base:<Node 버전>과 :sha-<짧은 커밋>으로 올린다
+# - PR: 빌드만 해서 Dockerfile이 깨지지 않았는지 확인한다(올리지 않음)
+# Node 버전은 Dockerfile의 ARG NODE_VERSION에서 읽는다.
+# 앱 이미지는 홈랩 Mac Studio(arm64)에서 돌리므로 arm64 러너에서 에뮬레이션 없이 빌드한다.
+name: image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - id: node
+        run: echo "version=$(sed -n 's/^ARG NODE_VERSION=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ steps.node.outputs.version }}
+            type=sha,prefix=sha-,format=short
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/arm64
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
