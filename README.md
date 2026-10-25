@@ -5,6 +5,7 @@
 - 이미지: `ghcr.io/cannalee90/node-base:<Node 버전>` (linux/arm64, 공개)
 - 내용: `node:<버전>-trixie-slim` + `apt-get upgrade` + `corepack enable`
 - 매주 월요일 04:00(KST)에 같은 태그로 다시 빌드한다. 앱은 다음 빌드 때 새 Debian 수정판을 받는다.
+- 주간·수동 빌드는 `<Node 버전>-<YYYYMMDD-HHmm>`(KST) 태그로도 남는다. 문제가 생기면 이 태그로 되돌린다.
 
 ## Node 버전 올리기
 
