@@ -1,6 +1,7 @@
 # node-base 이미지를 빌드한다(Dockerfile).
 # - main에 push: ghcr.io/cannalee90/node-base:<Node 버전>과 :sha-<짧은 커밋>으로 올린다
-# - 매주 월요일 04:00(KST): 같은 태그로 다시 빌드해 Debian 보안 수정판을 넣는다(schedule은 main에서 돈다)
+# - 매주 월요일 04:00(KST): <Node 버전> 태그를 다시 빌드해 Debian 보안 수정판을 넣는다(schedule은 main에서 돈다).
+#   sha 태그는 커밋 하나에 묶여 있어 덮어쓰지 않는다. 대신 <Node 버전>-<날짜> 태그로 주간 빌드를 남긴다.
 # - PR: 빌드만 해서 Dockerfile이 깨지지 않았는지 확인한다(올리지 않음)
 # Node 버전은 Dockerfile의 ARG NODE_VERSION에서 읽는다.
 # 앱 이미지는 홈랩 Mac Studio(arm64)에서 돌리므로 arm64 러너에서 에뮬레이션 없이 빌드한다.
@@ -42,7 +43,8 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=${{ steps.node.outputs.version }}
-            type=sha,prefix=sha-,format=short
+            type=sha,prefix=sha-,format=short,enable=${{ github.event_name != 'schedule' }}
+            type=schedule,pattern=${{ steps.node.outputs.version }}-{{date 'YYYYMMDD'}}
       - uses: docker/build-push-action@v7
         with:
           context: .
