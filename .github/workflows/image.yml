@@ -2,7 +2,7 @@
 # - main에 push: ghcr.io/cannalee90/node-base:<Node 버전>과 :sha-<짧은 커밋>으로 올린다
 # - 매주 월요일 04:00(KST): <Node 버전> 태그를 다시 빌드해 Debian 보안 수정판을 넣는다(schedule은 main에서 돈다).
 #   sha 태그는 커밋 하나에 묶여 있어 push 실행에서만 단다(schedule·수동 실행은 덮어쓰지 않는다).
-#   대신 schedule 실행은 <Node 버전>-<날짜(KST)> 태그로 주간 빌드를 남긴다.
+#   대신 schedule·수동 실행은 <Node 버전>-<날짜(KST)> 태그로 빌드를 남긴다.
 # - PR: 빌드만 해서 Dockerfile이 깨지지 않았는지 확인한다(올리지 않음)
 # Node 버전은 Dockerfile의 ARG NODE_VERSION에서 읽는다.
 # 앱 이미지는 홈랩 Mac Studio(arm64)에서 돌리므로 arm64 러너에서 에뮬레이션 없이 빌드한다.
@@ -21,10 +21,10 @@ permissions:
   packages: write
 
 concurrency:
-  # 같은 그룹에서는 실행 중이 아니라 대기 중인 run도 새 run에 밀려 취소된다.
-  # push는 커밋마다 그룹을 따로 둬서 모든 커밋이 sha 태그를 받는다. schedule·수동 실행도 push와 그룹을 나눈다.
-  # PR만 같은 브랜치의 새 커밋이 오면 이전 실행을 취소한다.
-  group: image-${{ github.event_name }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  # main의 push·schedule·수동 실행은 한 그룹에서 차례로 돈다. 그래서 움직이는 <Node 버전> 태그는 늘 최신 main 빌드가 갖는다.
+  # 같은 그룹의 대기 중인 run은 새 run에 밀려 취소된다. 그때 밀린 중간 커밋은 sha 태그를 받지 못할 수 있지만,
+  # 다음 run이 같거나 더 새 커밋을 빌드하므로 이미지 내용은 빠지지 않는다. PR만 새 커밋이 오면 이전 실행을 취소한다.
+  group: image-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.node.outputs.version }}
             type=sha,prefix=sha-,format=short,enable=${{ github.event_name == 'push' }}
-            type=schedule,pattern=${{ steps.node.outputs.version }}-{{date 'YYYYMMDD' tz='Asia/Seoul'}}
+            type=raw,value=${{ steps.node.outputs.version }}-{{date 'YYYYMMDD' tz='Asia/Seoul'}},enable=${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       - uses: docker/build-push-action@v7
         with:
           context: .
