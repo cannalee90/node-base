@@ -1,5 +1,6 @@
 # node-base 이미지를 빌드한다(Dockerfile).
 # - main에 push: ghcr.io/cannalee90/node-base:<Node 버전>과 :sha-<짧은 커밋>으로 올린다
+# - 매주 월요일 04:00(KST): 같은 태그로 다시 빌드해 Debian 보안 수정판을 넣는다(schedule은 main에서 돈다)
 # - PR: 빌드만 해서 Dockerfile이 깨지지 않았는지 확인한다(올리지 않음)
 # Node 버전은 Dockerfile의 ARG NODE_VERSION에서 읽는다.
 # 앱 이미지는 홈랩 Mac Studio(arm64)에서 돌리므로 arm64 러너에서 에뮬레이션 없이 빌드한다.
@@ -9,6 +10,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 19 * * 0"
   workflow_dispatch:
 
 permissions:
