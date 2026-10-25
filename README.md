@@ -3,7 +3,8 @@
 홈랩 Node 앱(code-review, homelab-log-agent, llm-wiki)과 obsidian-sync가 함께 쓰는 베이스 이미지다.
 
 - 이미지: `ghcr.io/cannalee90/node-base:<Node 버전>` (linux/arm64, 공개)
-- 내용: `node:<버전>-trixie-slim` + `corepack enable`
+- 내용: `node:<버전>-trixie-slim` + `apt-get upgrade` + `corepack enable`
+- 매주 월요일 04:00(KST)에 같은 태그로 다시 빌드한다. 앱은 다음 빌드 때 새 Debian 수정판을 받는다.
 
 ## Node 버전 올리기
 
